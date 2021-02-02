@@ -2,7 +2,7 @@
 
 on: [push, pull_request]
 
-name: MSRV
+name: Main
 
 jobs:
   check:
@@ -58,7 +58,6 @@ jobs:
       matrix:
         rust:
           - stable
-          - nightly
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
