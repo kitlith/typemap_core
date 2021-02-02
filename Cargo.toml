@@ -1,0 +1,16 @@
+[package]
+name = "typemap_core"
+version = "0.1.0"
+authors = ["Kitlith <kitlith@kitl.pw>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[dev-dependencies]
+trybuild = "1.0.39"
+
+[build-dependencies]
+# TODO: I'd really prefer to use autocfg but it doesn't implement nightly feature detection yet
+rustc_version = "0.2"
