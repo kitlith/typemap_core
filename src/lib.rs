@@ -165,55 +165,51 @@ impl<V: 'static, R: TypeCollectionImpl> TypeCollection for Ty<V, R> {
     }
 }
 
-// trait DoesAThing<Opts> {
-//     //type Options;
-// }
-//
-// struct A;
-// struct B;
-// struct C;
-//
-// impl<Opts> DoesAThing<Opts> for A where Opts: Contains<u32> {}
-// impl<Opts> DoesAThing<Opts> for B where Opts: Contains<u16> {}
-// impl<Opts> DoesAThing<Opts> for C
-// where
-//     Opts: Contains<u8>,
-//     B: DoesAThing<Opts>,
-//     A: DoesAThing<Opts>,
-// {
-// }
-//
-// type Test = Ty<u64, Ty<u32, Ty<u16, Ty<u8, ()>>>>;
-//
-// fn test_thing<T>()
-// where
-//     C: DoesAThing<T>,
-// {
-// }
-//
-// fn main() {
-//     let mut test = Test::default();
-//
-//     test.set(1u8);
-//     test.set(2u16);
-//     test.set(3u32);
-//     test.set(4u64);
-//     // errors as not implemented
-//     //test.set(5u128);
-//
-//     test_thing::<Test>();
-//
-//     assert_eq!(*test.get::<u8>(), 1u8);
-//     assert_eq!(*test.get::<u16>(), 2u16);
-//     assert_eq!(*test.get::<u32>(), 3u32);
-//     assert_eq!(*test.get::<u64>(), 4u64);
-//     //assert_eq!(*test.get::<u128>(), 5u128);
-// }
-
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    trait DoesAThing<Opts> {}
+
+    struct A;
+    struct B;
+    struct C;
+
+    impl<Opts> DoesAThing<Opts> for A where Opts: Contains<u32> {}
+    impl<Opts> DoesAThing<Opts> for B where Opts: Contains<u16> {}
+    impl<Opts> DoesAThing<Opts> for C
+    where
+        Opts: Contains<u8>,
+        B: DoesAThing<Opts>,
+        A: DoesAThing<Opts>,
+    {
+    }
+
+    type Test = Ty<u64, Ty<u32, Ty<u16, Ty<u8, ()>>>>;
+
+    fn test_thing<T>()
+    where
+        C: DoesAThing<T>,
+    {
+    }
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn test_set_get() {
+        let mut test = Test::default();
+
+        test.set(1u8);
+        test.set(2u16);
+        test.set(3u32);
+        test.set(4u64);
+        // errors as not implemented
+        //test.set(5u128);
+
+        test_thing::<Test>();
+
+        assert_eq!(*test.get::<u8>(), 1u8);
+        assert_eq!(*test.get::<u16>(), 2u16);
+        assert_eq!(*test.get::<u32>(), 3u32);
+        assert_eq!(*test.get::<u64>(), 4u64);
+        //assert_eq!(*test.get::<u128>(), 5u128);
     }
 }
