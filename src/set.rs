@@ -1,4 +1,4 @@
-use super::{Sealed, Ty, TyTerm};
+use super::{Sealed, Ty, TyEnd};
 
 use core::any::Any;
 
@@ -21,7 +21,7 @@ pub trait TypeMapSet: Sealed {
 
 // # Terminating Impls -- You can't set any items on or beyond these types.
 
-impl TypeMapSet for TyTerm {
+impl TypeMapSet for TyEnd {
     fn try_set<T: 'static>(&mut self, _value: T) -> bool {
         false
     }

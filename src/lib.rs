@@ -5,13 +5,13 @@
 mod macros;
 
 mod private {
-    use super::{Ty, TyTerm};
+    use super::{Ty, TyEnd};
 
     pub trait Sealed {}
     impl<T: 'static, R> Sealed for Ty<T, R> {}
     impl<T: 'static, R> Sealed for &Ty<T, R> {}
     impl<T: 'static, R> Sealed for &mut Ty<T, R> {}
-    impl Sealed for TyTerm {}
+    impl Sealed for TyEnd {}
 }
 
 mod get;
@@ -30,7 +30,7 @@ pub struct Ty<V: 'static, R> {
     pub rest: R,
 }
 
-pub struct TyTerm;
+pub struct TyEnd;
 
 impl<V: 'static, R> Ty<V, R> {
     pub fn new(val: V, rest: R) -> Self {

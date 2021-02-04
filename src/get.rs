@@ -1,4 +1,4 @@
-use super::{Sealed, Ty, TyTerm};
+use super::{Sealed, Ty, TyEnd};
 
 use core::any::Any;
 
@@ -18,7 +18,7 @@ pub trait TypeMapGet: Sealed {
 }
 
 // Terminating impl. It contains no items, and there are no items past it that you can get.
-impl TypeMapGet for TyTerm {
+impl TypeMapGet for TyEnd {
     fn try_get<T: 'static>(&self) -> Option<&T> {
         None
     }
@@ -85,15 +85,15 @@ mod test {
         assert_eq!(test.try_get::<u64>(), Some(&4u64));
         assert_eq!(test.try_get::<u128>(), None);
 
-        let test_ref: typemap_ty!(u128, @rest = &mut Test) = typemap!(u128 = 5u128, &mut test);
+        let test_ref: typemap_ty!(u128, ..&mut Test) = typemap!(u128 = 5u128, ..&mut test);
         assert_eq!(test_ref.try_get::<u8>(), Some(&1u8));
         assert_eq!(test_ref.try_get::<u128>(), Some(&5u128));
 
-        let test_ref: typemap_ty!(u128, @rest = &Test) = typemap!(u128 = 5u128, &test);
+        let test_ref: typemap_ty!(u128, ..&Test) = typemap!(u128 = 5u128, ..&test);
         assert_eq!(test_ref.try_get::<u8>(), Some(&1u8));
         assert_eq!(test_ref.try_get::<u128>(), Some(&5u128));
 
-        let test: typemap_ty!(u128, @rest = Test) = typemap!(u128 = 5u128, test);
+        let test: typemap_ty!(u128, ..Test) = typemap!(u128 = 5u128, ..test);
         assert_eq!(test.try_get::<u8>(), Some(&1u8));
         assert_eq!(test.try_get::<u128>(), Some(&5u128));
     }
