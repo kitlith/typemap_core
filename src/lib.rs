@@ -1,215 +1,137 @@
 #![no_std]
 #![cfg_attr(nightly, feature(marker_trait_attr))]
 
-use core::any::Any;
+#[macro_use]
+mod macros;
 
 mod private {
     use super::Ty;
 
     pub trait Sealed {}
-    impl<T: 'static, R: TypeCollectionImpl> Sealed for Ty<T, R> {}
-    impl<T: 'static, R: TypeCollectionImpl> Sealed for &Ty<T, R> {}
-    impl<T: 'static, R: TypeCollectionImpl> Sealed for &mut Ty<T, R> {}
+    impl<T: 'static, R> Sealed for Ty<T, R> {}
+    impl<T: 'static, R> Sealed for &Ty<T, R> {}
+    impl<T: 'static, R> Sealed for &mut Ty<T, R> {}
     impl Sealed for () {}
-
-    pub trait CanMut {}
-    impl<T: 'static, R: TypeCollectionImpl> CanMut for Ty<T, R> {}
-    impl<T: 'static, R: TypeCollectionImpl> CanMut for &mut Ty<T, R> {}
-
-    pub trait TypeCollectionImpl: Sealed {
-        fn get_impl<T: 'static>(&self) -> Option<&T>;
-        fn set_impl<T: 'static>(&mut self, value: T) -> bool;
-    }
 }
 
-use private::TypeCollectionImpl;
+mod get;
+mod set;
+
+use private::Sealed;
+
+use get::TypeMapGetImpl;
+use set::TypeMapSetImpl;
+
+pub use {get::Contains, set::ContainsMut};
 
 #[derive(Clone, Default)]
-pub struct Ty<V: 'static, R: TypeCollectionImpl> {
-    val: V,
-    rest: R,
+pub struct Ty<V: 'static, R> {
+    pub val: V,
+    pub rest: R,
 }
 
-#[cfg_attr(nightly, marker)]
-pub trait Contains<T>: private::Sealed {}
-
-#[cfg_attr(nightly, marker)]
-pub trait ContainsMut<T>: private::CanMut {}
-
-#[cfg(nightly)]
-mod nightly_impls {
-    use super::{Contains, ContainsMut, Ty, TypeCollectionImpl};
-
-    impl<A: 'static, R: TypeCollectionImpl> Contains<A> for Ty<A, R> {}
-    impl<A: 'static, B: 'static, R: TypeCollectionImpl> Contains<B> for Ty<A, R> where R: Contains<B> {}
-    impl<A: 'static, B: 'static, R: TypeCollectionImpl> Contains<A> for &Ty<B, R> where
-        Ty<B, R>: Contains<A>
-    {
-    }
-    impl<A: 'static, B: 'static, R: TypeCollectionImpl> Contains<A> for &mut Ty<B, R> where
-        Ty<B, R>: Contains<A>
-    {
-    }
-
-    impl<A: 'static, R: TypeCollectionImpl> ContainsMut<A> for Ty<A, R> {}
-    impl<A: 'static, B: 'static, R: TypeCollectionImpl> ContainsMut<B> for Ty<A, R> where
-        R: ContainsMut<B>
-    {
-    }
-    impl<A: 'static, B: 'static, R: TypeCollectionImpl> ContainsMut<A> for &mut Ty<B, R> where
-        Ty<B, R>: ContainsMut<A>
-    {
+impl<V: 'static, R> Ty<V, R> {
+    pub fn new(val: V, rest: R) -> Self {
+        Ty { val, rest }
     }
 }
 
-#[cfg(not(nightly))]
-mod stable_impls {
-    use super::{Contains, ContainsMut, Ty, TypeCollectionImpl};
+// TODO: should I continue wrapping the Set and Get impl traits? or just expose them directly?
+//  I'm leaning towards the latter since at the moment there's no way to guarantee
+//  that you can call try_get()/try_set()
+pub trait TypeCollection: Sized + private::Sealed {
+    fn try_get<T: 'static>(&self) -> Option<&T>
+    where
+        Self: TypeMapGetImpl,
+    {
+        self.get_impl()
+    }
 
-    impl<A: 'static, B: 'static, R: TypeCollectionImpl> Contains<A> for Ty<B, R> {}
-    impl<A: 'static, B: 'static, R: TypeCollectionImpl> Contains<A> for &Ty<B, R> {}
-
-    impl<A: 'static, B: 'static, R: TypeCollectionImpl> ContainsMut<A> for Ty<B, R> {}
-}
-
-pub trait TypeCollection: private::Sealed {
-    fn try_get<T: 'static>(&self) -> Option<&T>;
     fn get<T: 'static>(&self) -> &T
     where
-        Self: Contains<T>;
+        Self: Contains<T>,
+    {
+        self.get_impl()
+            .expect("Does not contain type! Check for errors by using the nightly compiler.")
+    }
 
     #[must_use]
-    fn try_set<T: 'static>(&mut self, value: T) -> bool;
+    fn try_set<T: 'static>(&mut self, value: T) -> bool
+    where
+        Self: TypeMapSetImpl,
+    {
+        self.set_impl(value)
+    }
+
     fn set<T: 'static>(&mut self, value: T)
     where
-        Self: ContainsMut<T>;
+        Self: ContainsMut<T>,
+    {
+        assert!(
+            self.set_impl(value),
+            "Cannot set type! Check for errors by using the nightly compiler."
+        )
+    }
 
+    fn insert<T: 'static>(self, val: T) -> Ty<T, Self>
+    where
+        Ty<T, Self>: TypeCollection,
+    {
+        Ty { val, rest: self }
+    }
     fn insert_ref<'a, T: 'static>(&'a self, val: T) -> Ty<T, &'a Self>
     where
-        &'a Self: TypeCollectionImpl,
+        Ty<T, &'a Self>: TypeCollection,
     {
         Ty { val, rest: self }
     }
     fn insert_mut<'a, T: 'static>(&'a mut self, val: T) -> Ty<T, &'a mut Self>
     where
-        &'a mut Self: TypeCollectionImpl,
+        Ty<T, &'a mut Self>: TypeCollection,
     {
         Ty { val, rest: self }
     }
 }
 
-pub trait TypeCollectionExt: TypeCollection + TypeCollectionImpl + Sized {
-    fn insert<T: 'static>(self, val: T) -> Ty<T, Self> {
-        Ty { val, rest: self }
-    }
-}
-
-impl TypeCollectionImpl for () {
-    fn get_impl<T: 'static>(&self) -> Option<&T> {
-        None
-    }
-
-    fn set_impl<T: 'static>(&mut self, _value: T) -> bool {
-        false
-    }
-}
-
-impl<V: 'static, R: TypeCollectionImpl> TypeCollectionImpl for Ty<V, R> {
-    fn get_impl<T: 'static>(&self) -> Option<&T> {
-        Any::downcast_ref::<T>(&self.val).or_else(|| self.rest.get_impl::<T>())
-    }
-
-    fn set_impl<T: 'static>(&mut self, value: T) -> bool {
-        if let Some(val) = Any::downcast_mut(&mut self.val) {
-            *val = value;
-            true
-        } else {
-            self.rest.set_impl(value)
-        }
-    }
-}
-
-impl<V: 'static, R: TypeCollectionImpl> TypeCollectionImpl for &Ty<V, R> {
-    fn get_impl<T: 'static>(&self) -> Option<&T> {
-        (**self).get_impl()
-    }
-    fn set_impl<T: 'static>(&mut self, _value: T) -> bool {
-        false
-    }
-}
-
-impl<V: 'static, R: TypeCollectionImpl> TypeCollectionImpl for &mut Ty<V, R> {
-    fn get_impl<T: 'static>(&self) -> Option<&T> {
-        (**self).get_impl()
-    }
-    fn set_impl<T: 'static>(&mut self, value: T) -> bool {
-        (**self).set_impl(value)
-    }
-}
-
-impl<V: 'static, R: TypeCollectionImpl> TypeCollection for Ty<V, R> {
-    fn try_get<T: 'static>(&self) -> Option<&T> {
-        self.get_impl()
-    }
-
-    fn get<T: 'static>(&self) -> &T {
-        self.get_impl().unwrap()
-    }
-
-    fn try_set<T: 'static>(&mut self, value: T) -> bool {
-        self.set_impl(value)
-    }
-
-    fn set<T: 'static>(&mut self, value: T) {
-        assert!(self.set_impl(value));
-    }
-}
+impl<V: 'static, R> TypeCollection for Ty<V, R> {}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::TypeCollection;
 
-    trait DoesAThing<Opts> {}
-
-    struct A;
-    struct B;
-    struct C;
-
-    impl<Opts> DoesAThing<Opts> for A where Opts: Contains<u32> {}
-    impl<Opts> DoesAThing<Opts> for B where Opts: Contains<u16> {}
-    impl<Opts> DoesAThing<Opts> for C
-    where
-        Opts: Contains<u8>,
-        B: DoesAThing<Opts>,
-        A: DoesAThing<Opts>,
-    {
-    }
-
-    type Test = Ty<u64, Ty<u32, Ty<u16, Ty<u8, ()>>>>;
-
-    fn test_thing<T>()
-    where
-        C: DoesAThing<T>,
-    {
-    }
+    // trait DoesAThing<Opts> {}
+    //
+    // struct A;
+    // struct B;
+    // struct C;
+    //
+    // impl<Opts> DoesAThing<Opts> for A where Opts: Contains<u32> {}
+    // impl<Opts> DoesAThing<Opts> for B where Opts: Contains<u16> {}
+    // impl<Opts> DoesAThing<Opts> for C
+    // where
+    //     Opts: Contains<u8>,
+    //     B: DoesAThing<Opts>,
+    //     A: DoesAThing<Opts>,
+    // {
+    // }
+    //
+    // type Test = Ty<u64, Ty<u32, Ty<u16, Ty<u8, ()>>>>;
+    //
+    // fn test_thing<T>()
+    // where
+    //     C: DoesAThing<T>,
+    // {
+    // }
 
     #[test]
     fn test_set_get() {
-        let mut test = Test::default();
+        let mut test = typemap!(u32 = 32u32, u64 = 64u64);
+        assert_eq!(test.get::<u32>(), &32);
+        assert_eq!(test.get::<u64>(), &64);
 
-        test.set(1u8);
-        test.set(2u16);
-        test.set(3u32);
-        test.set(4u64);
-        // errors as not implemented
-        //test.set(5u128);
-
-        test_thing::<Test>();
-
-        assert_eq!(*test.get::<u8>(), 1u8);
-        assert_eq!(*test.get::<u16>(), 2u16);
-        assert_eq!(*test.get::<u32>(), 3u32);
-        assert_eq!(*test.get::<u64>(), 4u64);
-        //assert_eq!(*test.get::<u128>(), 5u128);
+        test.set(1u32);
+        test.set(2u64);
+        assert_eq!(test.get::<u32>(), &1);
+        assert_eq!(test.get::<u64>(), &2);
     }
 }
