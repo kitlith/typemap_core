@@ -2,7 +2,7 @@
 /// typemap_ty!(Type, Type2, ... , @term = rest)
 #[macro_export]
 macro_rules! typemap_ty {
-    () => { () };
+    () => { $crate::TyTerm };
     ($ty:ty, $($rest:tt)*) => {
         $crate::Ty::<$ty, $crate::typemap_ty!($($rest)*)>
     };
@@ -14,7 +14,7 @@ macro_rules! typemap_ty {
 /// typemap!(Type = val, Type2 = val2, ... , rest)
 #[macro_export]
 macro_rules! typemap {
-    () => { () };
+    () => { $crate::TyTerm };
     ($ty:ty = $val:expr, $($rest:tt)* ) => {
         $crate::Ty::<$ty, _>::new(
             ::core::convert::Into::<$ty>::into($val),

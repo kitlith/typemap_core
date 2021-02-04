@@ -1,66 +1,74 @@
-use super::{Sealed, Ty};
+use super::{Sealed, Ty, TyTerm};
 
 use core::any::Any;
 
+// Each implementation of Contains corresponds with an implementation of TypeMapGet
 #[cfg_attr(nightly, marker)]
-pub trait Contains<T>: TypeMapGetImpl {}
+pub trait Contains<T>: TypeMapGet {}
 
-#[cfg(nightly)]
-mod nightly_contains_impls {
-    use super::{Contains, Ty, TypeMapGetImpl};
-
-    impl<A: 'static, R: TypeMapGetImpl> Contains<A> for Ty<A, R> {}
-
-    // TODO: use Borrow?
-    impl<A: 'static, B: 'static, R: Contains<B>> Contains<B> for Ty<A, R> {}
-
-    // the following are implemented in terms of the former
-
-    impl<A: 'static, B: 'static, R: TypeMapGetImpl> Contains<A> for &Ty<B, R> where Ty<B, R>: Contains<A>
-    {}
-
-    impl<A: 'static, B: 'static, R: TypeMapGetImpl> Contains<A> for &mut Ty<B, R> where
-        Ty<B, R>: Contains<A>
+pub trait TypeMapGet: Sealed {
+    fn try_get<T: 'static>(&self) -> Option<&T>;
+    fn get<T: 'static>(&self) -> &T
+    where
+        Self: Contains<T>,
     {
+        self.try_get()
+            .expect("Does not contain type! Check for errors by using the nightly compiler.")
     }
 }
 
-#[cfg(not(nightly))]
-mod stable_contains_impls {
-    use super::{Contains, Ty, TypeMapGetImpl};
-
-    impl<A: 'static, B: 'static, R: TypeMapGetImpl> Contains<A> for Ty<B, R> {}
-    impl<A: 'static, B: 'static, R: TypeMapGetImpl> Contains<A> for &Ty<B, R> {}
-}
-
-pub trait TypeMapGetImpl: Sealed {
-    fn get_impl<T: 'static>(&self) -> Option<&T>;
-}
-
-impl TypeMapGetImpl for () {
-    fn get_impl<T: 'static>(&self) -> Option<&T> {
+// Terminating impl. It contains no items, and there are no items past it that you can get.
+impl TypeMapGet for TyTerm {
+    fn try_get<T: 'static>(&self) -> Option<&T> {
         None
     }
 }
 
+// # Recursive impl. We are either returning the current item or delegating to the inner type.
+
+// on nightly, when Contains<T> is implemented, TypeMapGet::try_get should never return None
+#[cfg(nightly)]
+mod nightly_contains_impls {
+    use super::{Contains, Ty, TypeMapGet};
+
+    impl<A: 'static, R: TypeMapGet> Contains<A> for Ty<A, R> {}
+
+    // TODO: use Borrow?
+    impl<A: 'static, B: 'static, R: Contains<B>> Contains<B> for Ty<A, R> {}
+}
+
+// on stable, we can't properly constrain the trait, so we just do a blanket impl and let it panic at runtime.
+#[cfg(not(nightly))]
+impl<A: 'static, B: 'static, R: TypeMapGet> Contains<A> for Ty<B, R> {}
+
 // TODO: use Borrow?
-impl<V: 'static, R: TypeMapGetImpl> TypeMapGetImpl for Ty<V, R> {
-    fn get_impl<T: 'static>(&self) -> Option<&T> {
-        Any::downcast_ref::<T>(&self.val).or_else(|| self.rest.get_impl::<T>())
+impl<V: 'static, R: TypeMapGet> TypeMapGet for Ty<V, R> {
+    fn try_get<T: 'static>(&self) -> Option<&T> {
+        Any::downcast_ref::<T>(&self.val).or_else(|| self.rest.try_get::<T>())
     }
 }
 
-impl<V: 'static, R: TypeMapGetImpl> TypeMapGetImpl for &Ty<V, R> {
-    fn get_impl<T: 'static>(&self) -> Option<&T> {
-        Ty::<V, R>::get_impl(*self)
+// # End Recursive impl
+// # Reference Impls. Thin shims that delegate to the Recursive Impl for references
+
+impl<A: 'static, B: 'static, R: TypeMapGet> Contains<A> for &Ty<B, R> where Ty<B, R>: Contains<A> {}
+
+impl<V: 'static, R: TypeMapGet> TypeMapGet for &Ty<V, R> {
+    fn try_get<T: 'static>(&self) -> Option<&T> {
+        Ty::<V, R>::try_get(*self)
     }
 }
 
-impl<V: 'static, R: TypeMapGetImpl> TypeMapGetImpl for &mut Ty<V, R> {
-    fn get_impl<T: 'static>(&self) -> Option<&T> {
-        Ty::<V, R>::get_impl(*self)
+impl<A: 'static, B: 'static, R: TypeMapGet> Contains<A> for &mut Ty<B, R> where Ty<B, R>: Contains<A>
+{}
+
+impl<V: 'static, R: TypeMapGet> TypeMapGet for &mut Ty<V, R> {
+    fn try_get<T: 'static>(&self) -> Option<&T> {
+        Ty::<V, R>::try_get(*self)
     }
 }
+
+// # End Reference Impls
 
 #[cfg(test)]
 mod test {
@@ -68,21 +76,25 @@ mod test {
 
     #[test]
     fn test_get_impl() {
-        let test = Ty {
-            val: 4u64,
-            rest: Ty {
-                val: 3u32,
-                rest: Ty {
-                    val: 2u16,
-                    rest: Ty { val: 1u8, rest: () },
-                },
-            },
-        };
+        type Test = typemap_ty!(u64, u32, u16, u8);
+        let mut test: Test = typemap!(u64 = 4u64, u32 = 3u32, u16 = 2u16, u8 = 1u8);
 
-        assert_eq!(test.get_impl::<u8>(), Some(&1u8));
-        assert_eq!(test.get_impl::<u16>(), Some(&2u16));
-        assert_eq!(test.get_impl::<u32>(), Some(&3u32));
-        assert_eq!(test.get_impl::<u64>(), Some(&4u64));
-        assert_eq!(test.get_impl::<u128>(), None);
+        assert_eq!(test.try_get::<u8>(), Some(&1u8));
+        assert_eq!(test.try_get::<u16>(), Some(&2u16));
+        assert_eq!(test.try_get::<u32>(), Some(&3u32));
+        assert_eq!(test.try_get::<u64>(), Some(&4u64));
+        assert_eq!(test.try_get::<u128>(), None);
+
+        let test_ref: typemap_ty!(u128, @rest = &mut Test) = typemap!(u128 = 5u128, &mut test);
+        assert_eq!(test_ref.try_get::<u8>(), Some(&1u8));
+        assert_eq!(test_ref.try_get::<u128>(), Some(&5u128));
+
+        let test_ref: typemap_ty!(u128, @rest = &Test) = typemap!(u128 = 5u128, &test);
+        assert_eq!(test_ref.try_get::<u8>(), Some(&1u8));
+        assert_eq!(test_ref.try_get::<u128>(), Some(&5u128));
+
+        let test: typemap_ty!(u128, @rest = Test) = typemap!(u128 = 5u128, test);
+        assert_eq!(test.try_get::<u8>(), Some(&1u8));
+        assert_eq!(test.try_get::<u128>(), Some(&5u128));
     }
 }
