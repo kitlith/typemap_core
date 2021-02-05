@@ -1,4 +1,6 @@
 #![no_std]
+#![forbid(unsafe_code)]
+#![warn(missing_docs)]
 #![cfg_attr(nightly, feature(marker_trait_attr))]
 
 #[macro_use]
@@ -24,12 +26,52 @@ pub use {
     set::{ContainsMut, TypeMapSet},
 };
 
+/// A type-level linked-list implementation of a typemap
+///
+/// The generic arguments can be treated as if this were a cons cell. i.e.
+/// ```
+/// use typemap_core::{Ty, TyEnd};
+/// type Example = Ty<u32, Ty<u16, Ty<u8, TyEnd>>>;
+/// ```
+/// is akin to `(cons u32 (cons u16 (cons u8 nil)))` at the type level,
+/// and creates a storage capable of holding a u32, a u16, and a u8.
+///
+/// A couple of helper macros, [`typemap_ty!()`] and [`typemap!()`] exist, for ease of definition.
+/// ```
+/// use typemap_core::{typemap, typemap_ty};
+/// type Example = typemap_ty!(u32, u16, u8);
+/// let example: Example = typemap!(u32 = 0u32, u16 = 1337u16, u8 = 255u8);
+/// ```
+///
+/// As a linked list, it is fairly easy to prepend additional items:
+/// ```
+/// # use typemap_core::typemap;
+/// # let example = typemap!(u32 = 0u32, u16 = 1337u16, u8 = 255u8);
+/// let extended = typemap!(&str = "Hello!", ..example);
+/// ```
+///
+/// Which also allows you to "override" existing values temporarilly.
+/// ```
+/// use typemap_core::{typemap, TypeMapGet};
+/// let greeting_options = typemap!(&str = "Hello!");
+/// let rude_greeting = typemap!(&str = "Go away.", ..&greeting_options);
+/// assert_eq!(rude_greeting.get::<&str>(), &"Go away.");
+/// drop(rude_greeting);
+/// assert_eq!(greeting_options.get::<&str>(), &"Hello!");
+/// ```
+///
+/// See the [`TypeMapGet`] and [`TypeMapSet`] traits for more details.
 #[derive(Clone, Default)]
 pub struct Ty<V: 'static, R> {
-    pub val: V,
-    pub rest: R,
+    val: V,
+    rest: R,
 }
 
+/// The end of a typemap.
+///
+/// Following the analogy of [`Ty`] to a cons cell, [`TyEnd`] is akin to nil.
+///
+/// See [`Ty`] for more details.
 pub struct TyEnd;
 
 impl<V: 'static, R> Ty<V, R> {

@@ -1,5 +1,5 @@
 // TODO: could probably be written in terms of a helper trait, to prevent the requirement of recursion?
-/// typemap_ty!(Type, Type2, ... , @term = rest)
+// typemap_ty!(Type, Type2, ... , @term = rest)
 #[macro_export]
 macro_rules! typemap_ty {
     () => { $crate::TyEnd };
@@ -11,7 +11,7 @@ macro_rules! typemap_ty {
 }
 
 // TODO: write in terms of insert, to prevent the requirement of recursion?
-/// typemap!(Type = val, Type2 = val2, ... , rest)
+// typemap!(Type = val, Type2 = val2, ... , rest)
 #[macro_export]
 macro_rules! typemap {
     () => { $crate::TyEnd };
