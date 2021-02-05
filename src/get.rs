@@ -79,22 +79,22 @@ mod test {
         type Test = typemap_ty!(u64, u32, u16, u8);
         let mut test: Test = typemap!(u64 = 4u64, u32 = 3u32, u16 = 2u16, u8 = 1u8);
 
-        assert_eq!(test.try_get::<u8>(), Some(&1u8));
-        assert_eq!(test.try_get::<u16>(), Some(&2u16));
-        assert_eq!(test.try_get::<u32>(), Some(&3u32));
-        assert_eq!(test.try_get::<u64>(), Some(&4u64));
+        assert_eq!(test.get::<u8>(), &1u8);
+        assert_eq!(test.get::<u16>(), &2u16);
+        assert_eq!(test.get::<u32>(), &3u32);
+        assert_eq!(test.get::<u64>(), &4u64);
         assert_eq!(test.try_get::<u128>(), None);
 
         let test_ref: typemap_ty!(u128, ..&mut Test) = typemap!(u128 = 5u128, ..&mut test);
-        assert_eq!(test_ref.try_get::<u8>(), Some(&1u8));
-        assert_eq!(test_ref.try_get::<u128>(), Some(&5u128));
+        assert_eq!(test_ref.get::<u8>(), &1u8);
+        assert_eq!(test_ref.get::<u128>(), &5u128);
 
         let test_ref: typemap_ty!(u128, ..&Test) = typemap!(u128 = 5u128, ..&test);
-        assert_eq!(test_ref.try_get::<u8>(), Some(&1u8));
-        assert_eq!(test_ref.try_get::<u128>(), Some(&5u128));
+        assert_eq!(test_ref.get::<u8>(), &1u8);
+        assert_eq!(test_ref.get::<u128>(), &5u128);
 
         let test: typemap_ty!(u128, ..Test) = typemap!(u128 = 5u128, ..test);
-        assert_eq!(test.try_get::<u8>(), Some(&1u8));
-        assert_eq!(test.try_get::<u128>(), Some(&5u128));
+        assert_eq!(test.get::<u8>(), &1u8);
+        assert_eq!(test.get::<u128>(), &5u128);
     }
 }
