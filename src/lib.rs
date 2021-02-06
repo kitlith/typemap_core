@@ -5,7 +5,7 @@
 //! ```
 //! use typemap_core::{typemap, Contains, TypeMapGet};
 //!
-//! fn uses_options<Opts: Contains<&str> + Contains<u32>>(opts: &Opts) {
+//! fn uses_options<Opts: Contains<&'static str> + Contains<u32>>(opts: &Opts) {
 //!     println!("str: \"{}\", u32: {}", opts.get::<&str>(), opts.get::<u32>());
 //! }
 //!

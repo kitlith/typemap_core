@@ -43,9 +43,9 @@ macro_rules! typemap_ty {
 /// ```
 /// is equivilant to:
 /// ```
-/// # use typemap_core::{Ty, TyTerm};
+/// # use typemap_core::{Ty, TyEnd};
 /// # use core::convert::Into;
-/// let example = Ty::<u16, _>::new(2u16.into(), Ty::<u8, _>::new(1u8.into(), TyTerm));
+/// let example = Ty::<u16, _>::new(2u16.into(), Ty::<u8, _>::new(1u8.into(), TyEnd));
 /// let _ = Ty::<u64, _>::new(4u64.into(), Ty::<u32, _>::new(3u32, &example));
 /// ```
 #[macro_export]
