@@ -1,5 +1,7 @@
 # typemap_core
-*A map from a type to a value of that type, without needing alloc*
+*A no_std typemap with trait-based value-presence guarantees (on nightly)*  
+or  
+*A map from a type to a value of that type, without needing std/alloc*
 
 This crate contains the `Contains<T>` and `ContainsMut<T>` traits.
 These traits are only implemented correctly on nightly due to missing features in stable,

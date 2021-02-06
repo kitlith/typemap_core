@@ -1,4 +1,6 @@
-//! A no_std, stack-based typemap with trait based value presence guarantees (on nightly)
+//! A no_std typemap with trait-based value-presence guarantees (on nightly)
+//!
+//! aka: A map from a type to a value of that type, without needing std/alloc
 //!
 //! # Example
 //!
