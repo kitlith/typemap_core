@@ -15,8 +15,8 @@ use core::any::Any;
 ///
 /// On nightly, this trait functions as intended with the help of an unstable feature.
 /// Unfortunately, it cannot be implemented as intended on stable at the moment,
-/// so it is given a blanket implementation to ensure that bounds that work on stable
-/// do not cause errors on nightly.
+/// so it is given a blanket implementation to ensure that bounds that work on nightly
+/// do not cause errors on stable.
 // Each implementation of Contains corresponds with an implementation of TypeMapGet
 #[cfg_attr(nightly, marker)]
 pub trait Contains<T>: TypeMapGet {}
@@ -59,7 +59,7 @@ pub trait TypeMapGet: Sealed {
         Self: Contains<T>,
     {
         self.try_get()
-            .expect("Does not contain type! Check for errors by using the nightly compiler.")
+            .expect("Cannot get type! Check for errors at compile-time by using nightly.")
     }
 }
 

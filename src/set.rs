@@ -17,8 +17,8 @@ use core::any::Any;
 ///
 /// On nightly, this trait functions as intended with the help of an unstable feature.
 /// Unfortunately, it cannot be implemented as intended on stable at the moment,
-/// so it is given a blanket implementation to ensure that bounds that work on stable
-/// do not cause errors on nightly.
+/// so it is given a blanket implementation to ensure that bounds that work on nightly
+/// do not cause errors on stable.
 // Each implementation of ContainsMut corresponds with an implementation of TypeMapSet
 #[cfg_attr(nightly, marker)]
 pub trait ContainsMut<T>: TypeMapSet {}
@@ -31,7 +31,7 @@ pub trait TypeMapSet: Sealed {
     /// This is mainly intended for the case where you don't require a type to be present,
     /// but would like to act on it if it is.
     /// Returns [`false`] if the type is not present in the map.
-    /// On nightly, this should only occur if [`Contains<T>`] is not implemented.
+    /// On nightly, this should only occur if [`ContainsMut<T>`] is not implemented.
     ///
     /// ```
     /// use typemap_core::{typemap, TypeMapGet, TypeMapSet};
@@ -64,7 +64,7 @@ pub trait TypeMapSet: Sealed {
     {
         assert!(
             self.try_set(value),
-            "Cannot set type! Check for errors by using the nightly compiler."
+            "Cannot set type! Check for errors at compile-time by using nightly."
         )
     }
 }

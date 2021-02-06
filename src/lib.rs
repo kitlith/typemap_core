@@ -1,3 +1,25 @@
+//! A no_std, stack-based typemap with trait based value presence guarantees (on nightly)
+//!
+//! # Example
+//!
+//! ```
+//! use typemap_core::{typemap, Contains, TypeMapGet};
+//!
+//! fn uses_options<Opts: Contains<&str> + Contains<u32>>(opts: &Opts) {
+//!     println!("str: \"{}\", u32: {}", opts.get::<&str>(), opts.get::<u32>());
+//! }
+//!
+//! let options = typemap!(u128 = 34u128, &str = "Hello, world!", u32 = 45u32);
+//! uses_options(&options);
+//! ```
+//!
+//! # Nightly
+//! Nightly is not required to use this library, but it is reccomended to at least check your code on nightly
+//! occasionally given the nature of the [`Contains<T>`] and [`ContainsMut<T>`] traits.
+//! On nightly, these traits ensure that you can only call the methods that panic
+//! when they are guaranteed not to panic.
+//! On stable, we can't implement it properly, so it merely has a blanket impl so that your trait bounds
+//! setup for nightly do not cause issues on stable.
 #![no_std]
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
@@ -75,6 +97,7 @@ pub struct Ty<V: 'static, R> {
 pub struct TyEnd;
 
 impl<V: 'static, R> Ty<V, R> {
+    /// Construct a node of a typemap
     pub fn new(val: V, rest: R) -> Self {
         Ty { val, rest }
     }
