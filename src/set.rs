@@ -49,7 +49,12 @@ pub trait TypeMapSet: Sealed {
     ///
     /// On nightly, you can only call this method if the type is actually present.
     /// (i.e. the map implements implements [`ContainsMut<T>`])
-    /// On stable, it panics on failure, containing a hint to use nightly to check your bounds at compile time.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if [`try_set`] would return [`false`].
+    /// This should only be possible on stable,
+    /// so you can weed out potential panics by occasionally checking against nightly.
     ///
     /// ```
     /// use typemap_core::{typemap, TypeMapGet, TypeMapSet};
@@ -58,6 +63,8 @@ pub trait TypeMapSet: Sealed {
     /// map.set("Hello, world!");
     /// println!("{}", map.get::<&str>());
     /// ```
+    ///
+    /// [`try_set`]: #tymethod.try_set
     fn set<T: 'static>(&mut self, value: T)
     where
         Self: ContainsMut<T>,

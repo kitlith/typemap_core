@@ -26,6 +26,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 #![cfg_attr(nightly, feature(marker_trait_attr))]
+#![doc(html_root_url = "https://docs.rs/typemap_core/0.1.0")]
 
 #[macro_use]
 mod macros;
@@ -85,7 +86,7 @@ pub use {
 /// ```
 ///
 /// See the [`TypeMapGet`] and [`TypeMapSet`] traits for more details.
-#[derive(Clone, Default)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
 pub struct Ty<V: 'static, R> {
     val: V,
     rest: R,
@@ -94,67 +95,21 @@ pub struct Ty<V: 'static, R> {
 /// The end of a typemap.
 ///
 /// Following the analogy of [`Ty`] to a cons cell, [`TyEnd`] is akin to nil.
-///
+///s
 /// See [`Ty`] for more details.
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
 pub struct TyEnd;
 
 impl<V: 'static, R> Ty<V, R> {
     /// Construct a node of a typemap
-    pub fn new(val: V, rest: R) -> Self {
+    pub const fn new(val: V, rest: R) -> Self {
         Ty { val, rest }
     }
 }
 
-// pub trait TypeMapInsert: Sized + private::Sealed {
-//     fn insert<T: 'static>(self, val: T) -> Ty<T, Self>
-//     where
-//         Ty<T, Self>: TypeMapInsert,
-//     {
-//         Ty { val, rest: self }
-//     }
-//     fn insert_ref<'a, T: 'static>(&'a self, val: T) -> Ty<T, &'a Self>
-//     where
-//         Ty<T, &'a Self>: TypeMapInsert,
-//     {
-//         Ty { val, rest: self }
-//     }
-//     fn insert_mut<'a, T: 'static>(&'a mut self, val: T) -> Ty<T, &'a mut Self>
-//     where
-//         Ty<T, &'a mut Self>: TypeMapInsert,
-//     {
-//         Ty { val, rest: self }
-//     }
-// }
-//
-// impl<V: 'static, R> TypeMapInsert for Ty<V, R> {}
-
 #[cfg(test)]
 mod tests {
     use super::{TypeMapGet, TypeMapSet};
-
-    // trait DoesAThing<Opts> {}
-    //
-    // struct A;
-    // struct B;
-    // struct C;
-    //
-    // impl<Opts> DoesAThing<Opts> for A where Opts: Contains<u32> {}
-    // impl<Opts> DoesAThing<Opts> for B where Opts: Contains<u16> {}
-    // impl<Opts> DoesAThing<Opts> for C
-    // where
-    //     Opts: Contains<u8>,
-    //     B: DoesAThing<Opts>,
-    //     A: DoesAThing<Opts>,
-    // {
-    // }
-    //
-    // type Test = Ty<u64, Ty<u32, Ty<u16, Ty<u8, ()>>>>;
-    //
-    // fn test_thing<T>()
-    // where
-    //     C: DoesAThing<T>,
-    // {
-    // }
 
     #[test]
     fn test_set_get() {

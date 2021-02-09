@@ -45,7 +45,12 @@ pub trait TypeMapGet: Sealed {
     ///
     /// On nightly, you can only call this method if the type is actually present.
     /// (i.e. the map implements implements [`Contains<T>`])
-    /// On stable, it panics on failure, containing a hint to use nightly to check your bounds at compile time.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if [`try_get`] would return [`None`].
+    /// This should only be possible on stable,
+    /// so you can weed out potential panics by occasionally checking against nightly.
     ///
     /// ```
     /// use typemap_core::{typemap, TypeMapGet};
@@ -54,6 +59,8 @@ pub trait TypeMapGet: Sealed {
     ///
     /// println!("{}", map.get::<&str>());
     /// ```
+    ///
+    /// [`try_get`]: #tymethod.try_get
     fn get<T: 'static>(&self) -> &T
     where
         Self: Contains<T>,

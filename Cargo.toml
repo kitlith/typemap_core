@@ -1,8 +1,13 @@
 [package]
 name = "typemap_core"
+description = "A no_std typemap with trait-based value-presence guarantees (on nightly)"
+repository = "https://github.com/kitlith/typemap_core"
+license = "MIT OR Apache-2.0"
 version = "0.1.0"
 authors = ["Kitlith <kitlith@kitl.pw>"]
 edition = "2018"
+keywords = ["type", "typemap", "contains"]
+categories = ["data-structures", "no-std"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,6 +15,7 @@ edition = "2018"
 
 [dev-dependencies]
 trybuild = "1.0.39"
+version-sync = "0.9"
 
 [build-dependencies]
 # TODO: I'd really prefer to use autocfg but it doesn't implement nightly feature detection yet
