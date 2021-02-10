@@ -8,6 +8,11 @@ authors = ["Kitlith <kitlith@kitl.pw>"]
 edition = "2018"
 keywords = ["type", "typemap", "contains"]
 categories = ["data-structures", "no-std"]
+exclude = [
+    "rust-toolchain",
+    ".pre-commit-config.yaml",
+    ".github/"
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
