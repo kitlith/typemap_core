@@ -1,6 +1,7 @@
 # typemap_core
 ![Build Status](https://github.com/kitlith/typemap_core/workflows/Main/badge.svg)
 [![Current Crates.io Version](https://img.shields.io/crates/v/typemap_core.svg)](https://crates.io/crates/typemap_core)
+[![Current Documentation](https://docs.rs/typemap_core/badge.svg)](https://docs.rs/typemap_core)
 
 *A no_std typemap with trait-based value-presence guarantees (on nightly)*  
 or  
