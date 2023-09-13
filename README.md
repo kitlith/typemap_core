@@ -7,6 +7,80 @@
 or  
 *A map from a type to a value of that type, without needing std/alloc*
 
+## Context Example
+
+```rust
+use typemap_core::{typemap, Contains};
+
+struct A;
+struct ContextA(u8);
+
+impl From<u8> for ContextA {
+    fn from(val: u8) -> Self {
+        Self(val)
+    }
+}
+
+struct B;
+struct ContextB(u16);
+
+impl From<u16> for ContextB {
+    fn from(val: u16) -> Self {
+        Self(val)
+    }
+}
+
+#[allow(unused)]
+struct C {
+    a: A,
+    b: B,
+}
+
+trait ParseTrait<Ctx> {
+    fn parse(context: &Ctx) -> Self;
+}
+
+impl<Ctx> ParseTrait<Ctx> for A
+where
+    Ctx: Contains<ContextA>,
+{
+    fn parse(context: &Ctx) -> Self {
+        context.get::<ContextA>();
+        A
+    }
+}
+
+impl<Ctx> ParseTrait<Ctx> for B
+where
+    Ctx: Contains<ContextB>,
+{
+    fn parse(context: &Ctx) -> Self {
+        context.get::<ContextB>();
+        B
+    }
+}
+
+impl<Ctx> ParseTrait<Ctx> for C
+where
+    A: ParseTrait<Ctx>,
+    B: ParseTrait<Ctx>,
+{
+    fn parse(context: &Ctx) -> Self {
+        Self {
+            a: A::parse(context),
+            b: B::parse(context)
+        }
+    }
+}
+
+fn main() {
+    C::parse(&typemap!(ContextA = 0u8, ContextB = 10u16));
+    
+    // Will panic at runtime on stable, and produce a compilation error on nightly
+    // C::parse(&typemap!(ContextA = 0u8));
+}
+```
+
 ## Nightly
 
 This crate contains the `Contains<T>` and `ContainsMut<T>` traits.
