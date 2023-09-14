@@ -13,8 +13,13 @@ or
 use typemap_core::{typemap, Contains};
 
 struct A;
+
+#[derive(Debug)]
 struct ContextA(u8);
 
+// Context types are encouraged to be newtypes with From impls,
+// so that when using the typemap! macro, you can use use the name
+// of the newtype as a kind of readable field name.
 impl From<u8> for ContextA {
     fn from(val: u8) -> Self {
         Self(val)
@@ -22,6 +27,8 @@ impl From<u8> for ContextA {
 }
 
 struct B;
+
+#[derive(Debug)]
 struct ContextB(u16);
 
 impl From<u16> for ContextB {
@@ -37,15 +44,15 @@ struct C {
 }
 
 trait ParseTrait<Ctx> {
-    fn parse(context: &Ctx) -> Self;
+    fn parse(context: Ctx) -> Self;
 }
 
 impl<Ctx> ParseTrait<Ctx> for A
 where
     Ctx: Contains<ContextA>,
 {
-    fn parse(context: &Ctx) -> Self {
-        context.get::<ContextA>();
+    fn parse(context: Ctx) -> Self {
+        println!("{:?}", context.get::<ContextA>());
         A
     }
 }
@@ -54,8 +61,8 @@ impl<Ctx> ParseTrait<Ctx> for B
 where
     Ctx: Contains<ContextB>,
 {
-    fn parse(context: &Ctx) -> Self {
-        context.get::<ContextB>();
+    fn parse(context: Ctx) -> Self {
+        println!("{:?}", context.get::<ContextB>());
         B
     }
 }
@@ -64,20 +71,37 @@ impl<Ctx> ParseTrait<Ctx> for C
 where
     A: ParseTrait<Ctx>,
     B: ParseTrait<Ctx>,
+    Ctx: Clone
 {
-    fn parse(context: &Ctx) -> Self {
+    fn parse(context: Ctx) -> Self {
         Self {
-            a: A::parse(context),
+            a: A::parse(context.clone()),
             b: B::parse(context)
         }
     }
 }
 
 fn main() {
-    C::parse(&typemap!(ContextA = 0u8, ContextB = 10u16));
-    
+    let ctx = typemap!(ContextA = 0u8);
+
     // Will panic at runtime on stable, and produce a compilation error on nightly
-    // C::parse(&typemap!(ContextA = 0u8));
+    // C::parse(&ctx);
+
+    // context can be extended 
+    let ctx = typemap!(ContextB = 10u16, ..ctx);
+
+    // prints:
+    // ContextA(0)
+    // ContextB(10)
+    C::parse(&ctx);
+
+    // and you can override earlier values of context without discarding them
+    let ctx = typemap!(ContextA = 5u8, ..ctx);
+
+    // prints:
+    // ContextA(5)
+    // ContextB(10)
+    C::parse(&ctx);
 }
 ```
 
@@ -92,6 +116,9 @@ even if you are otherwise targeting stable.
 This crate will properly implement those traits on stable as soon as we find a way to do so,
 but for now they are implemented for all instances of `Ty<T, Rest>`
 so that code running on stable doesn't need to cfg out all instances of requiring those traits.
+
+However, some configurations involving references to the rest of the typemap and
+overriding existing values fail to compile on nightly without the use of `-Ztrait-solver=next`.
 
 ## License
 
