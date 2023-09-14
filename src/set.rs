@@ -110,7 +110,7 @@ impl<A: 'static, B: 'static, R: TypeMapSet> ContainsMut<A> for Ty<B, R> {}
 // TODO: use BorrowMut?
 impl<V: 'static, R: TypeMapSet> TypeMapSet for Ty<V, R> {
     fn try_set<T: 'static>(&mut self, value: T) -> bool {
-        if let Some(val) = Any::downcast_mut(&mut self.val) {
+        if let Some(val) = <dyn Any>::downcast_mut(&mut self.val) {
             *val = value;
             true
         } else {

@@ -97,7 +97,7 @@ impl<A: 'static, B: 'static, R: TypeMapGet> Contains<A> for Ty<B, R> {}
 // TODO: use Borrow?
 impl<V: 'static, R: TypeMapGet> TypeMapGet for Ty<V, R> {
     fn try_get<T: 'static>(&self) -> Option<&T> {
-        Any::downcast_ref::<T>(&self.val).or_else(|| self.rest.try_get::<T>())
+        <dyn Any>::downcast_ref::<T>(&self.val).or_else(|| self.rest.try_get::<T>())
     }
 }
 
