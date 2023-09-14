@@ -1,10 +1,18 @@
 error[E0277]: the trait bound `Opts: Contains<u32>` is not satisfied
- --> $DIR/not_enough_bounds.rs:4:25
+ --> tests/ui/not_enough_bounds.rs:4:25
   |
 4 |     println!("{}", opts.get::<u32>());
   |                         ^^^ the trait `Contains<u32>` is not implemented for `Opts`
   |
+note: required by a bound in `typemap_core::TypeMapGet::get`
+ --> src/get.rs
+  |
+  |     fn get<T: 'static>(&self) -> &T
+  |        --- required by a bound in this associated function
+  |     where
+  |         Self: Contains<T>,
+  |               ^^^^^^^^^^^ required by this bound in `TypeMapGet::get`
 help: consider further restricting this bound
   |
-3 | fn not_enough_bounds<Opts: TypeMapGet + Contains<u32>>(opts: &Opts) {
-  |                                       ^^^^^^^^^^^^^^^
+3 | fn not_enough_bounds<Opts: TypeMapGet + typemap_core::Contains<u32>>(opts: &Opts) {
+  |                                       +++++++++++++++++++++++++++++

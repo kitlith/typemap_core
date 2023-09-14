@@ -1,10 +1,19 @@
 error[E0277]: the trait bound `TyEnd: Contains<u32>` is not satisfied
- --> $DIR/missing_type.rs:9:19
+ --> tests/nightly_ui/missing_type.rs:9:19
+  |
+9 |     missing_value(&map);
+  |     ------------- ^^^^ the trait `Contains<u32>` is not implemented for `TyEnd`
+  |     |
+  |     required by a bound introduced by this call
+  |
+  = help: the following other types implement trait `Contains<T>`:
+            <Ty<A, R> as Contains<A>>
+            <Ty<A, R> as Contains<B>>
+            <&Ty<B, R> as Contains<A>>
+            <&mut Ty<B, R> as Contains<A>>
+  = note: required for `Ty<&str, TyEnd>` to implement `Contains<u32>`
+note: required by a bound in `missing_value`
+ --> tests/nightly_ui/missing_type.rs:3:24
   |
 3 | fn missing_value<Opts: Contains<u32>>(opts: &Opts) {
-  |                        ------------- required by this bound in `missing_value`
-...
-9 |     missing_value(&map);
-  |                   ^^^^ the trait `Contains<u32>` is not implemented for `TyEnd`
-  |
-  = note: required because of the requirements on the impl of `Contains<u32>` for `Ty<&str, TyEnd>`
+  |                        ^^^^^^^^^^^^^ required by this bound in `missing_value`

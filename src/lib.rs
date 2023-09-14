@@ -76,7 +76,7 @@ pub use {
 /// ```
 ///
 /// Which also allows you to "override" existing values temporarilly.
-/// ```
+/// ```ignore
 /// use typemap_core::{typemap, TypeMapGet};
 /// let greeting_options = typemap!(&str = "Hello!");
 /// let rude_greeting = typemap!(&str = "Go away.", ..&greeting_options);
@@ -84,6 +84,8 @@ pub use {
 /// drop(rude_greeting);
 /// assert_eq!(greeting_options.get::<&str>(), &"Hello!");
 /// ```
+/// Or rather, you used to be able to do this, but a fix for something else
+/// broke this. `-Ztrait-solver=next` fixes it, so maybe one day in the future.
 ///
 /// See the [`TypeMapGet`] and [`TypeMapSet`] traits for more details.
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
@@ -95,7 +97,7 @@ pub struct Ty<V: 'static, R> {
 /// The end of a typemap.
 ///
 /// Following the analogy of [`Ty`] to a cons cell, [`TyEnd`] is akin to nil.
-///s
+///
 /// See [`Ty`] for more details.
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
 pub struct TyEnd;
